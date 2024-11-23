@@ -117,12 +117,12 @@ class Jar : public Process {
             // Free 50 jars from queue
             for (int i = 0; i < STERILIZATION_CAPACITY; i++) {
                 sterilizationQueue.GetFirst()->Activate();
-                totalJarsSterilized++;
             }
             Enter(sterilizationMachine, 1);
             Wait(STERILIZATION_TIME);
             Leave(sterilizationMachine, 1);
             for (int i = 0; i < STERILIZATION_CAPACITY; i++) {
+                totalJarsSterilized++;
                 (new SterilizedJarGenerator)->Activate();
             }
 
