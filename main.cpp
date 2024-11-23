@@ -1,3 +1,6 @@
+// xmovse00 Movsesian Lilit
+// xkorni03 Kornieiev Pavlo
+
 #include "simlib.h"
 
 // Facility representing a machine that sorts tomatoes by size.
@@ -59,6 +62,9 @@ int totalTomatoesRejectedSize = 0;
 int totalTomatoesRejectedDefects = 0;
 int totalTomatoesRejectedWorker = 0;
 int totalJarsFilled = 0;
+int totalJarsSterilized = 0;
+int totalJarsLabelApplied = 0;
+int totalJarsDatePrinted = 0;
 
 int tomatoesInCurrentJar = 0;
 
@@ -76,6 +82,34 @@ class Jar : public Process {
         Seize(lidCloser);
         Wait(LID_CLOSER_TIME);
         Release(lidCloser);
+
+        Into(sterilizationQueue);
+        
+        if (sterilizationQueue.Length() >= STERILIZATION_CAPACITY ) { 
+            Seize(sterilizationMachine);
+            Wait(STERILIZATION_TIME);
+            Release(sterilizationMachine);
+            // Free 50 jars from queue
+            for (int i = 0; i < STERILIZATION_CAPACITY; i++) {
+                sterilizationQueue.GetFirst()->Activate();
+                totalJarsSterilized++;
+            }
+        } else {
+            // Passivate the jar process until the sterilization queue has 50 jars
+            Passivate();
+        }
+        
+        // Apply labels
+        Seize(labelApplicator);
+        Wait(LABEL_APPLICATOR_TIME);
+        Release(labelApplicator);
+        totalJarsLabelApplied++;
+
+        // Print dates
+        Seize(datePrinter);
+        Wait(DATE_PRINTER_TIME);
+        Release(datePrinter);
+        totalJarsDatePrinted++;
 
         jarProcessingTime(Time - startTime);       
     }
@@ -179,5 +213,8 @@ int main() {
     Print("Number of tomatoes rejected due to defects: %d\n", totalTomatoesRejectedDefects);
     Print("Number of tomatoes rejected by quality control: %d\n", totalTomatoesRejectedWorker);
     Print("Total jars filled: %d\n", totalJarsFilled);
+    Print("Total jars sterilized: %d\n", totalJarsSterilized);
+    Print("Total jars label applied: %d\n", totalJarsLabelApplied);
+    Print("Total jars date printed: %d\n", totalJarsDatePrinted);
     return 0;
 }
