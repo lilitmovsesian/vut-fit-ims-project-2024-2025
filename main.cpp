@@ -29,7 +29,7 @@ Facility lidCloser("lidCloser");
 
 // Facility representing a sterilization machine used to sterilize jars.
 // Capacity: 50 jars per batch. Processing time: 2400 seconds.
-Facility sterilizationMachine("sterilizationMachine");
+Store sterilizationMachine("sterilizationMachine", 9);
 
 // Facility representing a machine that applies labels to the jars.
 // Capacity: 1 jar at a time. Processing time: 3 seconds.
@@ -119,9 +119,9 @@ class Jar : public Process {
                 sterilizationQueue.GetFirst()->Activate();
                 totalJarsSterilized++;
             }
-            Seize(sterilizationMachine);
+            Enter(sterilizationMachine, 1);
             Wait(STERILIZATION_TIME);
-            Release(sterilizationMachine);
+            Leave(sterilizationMachine, 1);
             for (int i = 0; i < STERILIZATION_CAPACITY; i++) {
                 (new SterilizedJarGenerator)->Activate();
             }
