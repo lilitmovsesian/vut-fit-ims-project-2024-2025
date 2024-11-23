@@ -6,7 +6,6 @@ LDFLAGS = -L./simlib/src -l:simlib.a
 all: build_simlib tomato_preserver
 
 build_simlib:
-	@echo "Running build_simlib.sh..."
 	@./build_simlib.sh
 
 tomato_preserver: main.cpp

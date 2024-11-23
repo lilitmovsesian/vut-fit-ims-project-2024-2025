@@ -55,7 +55,8 @@ const int TOMATOES_PER_JAR = 5; // Number of tomatoes per jar
 const int STERILIZATION_CAPACITY = 50; // Number of jars per sterilization batch
 
 Stat tomatoProcessingTime("Time to Process One Tomato Before Filling");
-Stat jarProcessingTime("Time to Process One Jar After Filling");
+Stat jarProcessingTime("Time to Process One Jar After Filling Before Sterilization");
+Stat sterilizedJarProcessingTime("Time to Process One Jar After Sterilization");
 
 int totalTomatoesGenerated = 0;
 int totalTomatoesRejectedSize = 0;
@@ -68,6 +69,33 @@ int totalJarsDatePrinted = 0;
 
 int tomatoesInCurrentJar = 0;
 
+
+
+class SterilizedJar : public Process {
+    void Behavior() override {
+        double startTime = Time; 
+
+        // Apply labels
+        Seize(labelApplicator);
+        Wait(LABEL_APPLICATOR_TIME);
+        Release(labelApplicator);
+        totalJarsLabelApplied++;
+
+        // Print dates
+        Seize(datePrinter);
+        Wait(DATE_PRINTER_TIME);
+        Release(datePrinter);
+        totalJarsDatePrinted++;
+
+        sterilizedJarProcessingTime(Time - startTime);
+    }
+};
+
+class SterilizedJarGenerator : public Event {
+    void Behavior() override {
+        (new SterilizedJar)->Activate();
+    }
+};
 
 class Jar : public Process {
     void Behavior() override {
@@ -86,30 +114,22 @@ class Jar : public Process {
         Into(sterilizationQueue);
         
         if (sterilizationQueue.Length() >= STERILIZATION_CAPACITY ) { 
-            Seize(sterilizationMachine);
-            Wait(STERILIZATION_TIME);
-            Release(sterilizationMachine);
             // Free 50 jars from queue
             for (int i = 0; i < STERILIZATION_CAPACITY; i++) {
                 sterilizationQueue.GetFirst()->Activate();
                 totalJarsSterilized++;
             }
+            Seize(sterilizationMachine);
+            Wait(STERILIZATION_TIME);
+            Release(sterilizationMachine);
+            for (int i = 0; i < STERILIZATION_CAPACITY; i++) {
+                (new SterilizedJarGenerator)->Activate();
+            }
+
         } else {
             // Passivate the jar process until the sterilization queue has 50 jars
             Passivate();
         }
-        
-        // Apply labels
-        Seize(labelApplicator);
-        Wait(LABEL_APPLICATOR_TIME);
-        Release(labelApplicator);
-        totalJarsLabelApplied++;
-
-        // Print dates
-        Seize(datePrinter);
-        Wait(DATE_PRINTER_TIME);
-        Release(datePrinter);
-        totalJarsDatePrinted++;
 
         jarProcessingTime(Time - startTime);       
     }
@@ -207,6 +227,7 @@ int main() {
     
     tomatoProcessingTime.Output();
     jarProcessingTime.Output();
+    sterilizedJarProcessingTime.Output();
 
     Print("Total tomatoes generated: %d\n", totalTomatoesGenerated);
     Print("Number of tomatoes rejected due to size: %d\n", totalTomatoesRejectedSize);
