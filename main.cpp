@@ -52,7 +52,7 @@ const double STERILIZATION_TIME = 2400.0; // 40 minutes
 const double LABEL_APPLICATOR_TIME = 3.0;
 const double DATE_PRINTER_TIME = 3.0;
 const int TOMATOES_PER_JAR = 5; // Number of tomatoes per jar
-const int STERILIZATION_CAPACITY = 50; // Number of jars per sterilization batch
+const int STERILIZATION_CAPACITY = 100; // Number of jars per sterilization batch
 
 Stat tomatoProcessingTime("Time to Process One Tomato Before Filling");
 Stat jarProcessingTime("Time to Process One Jar After Filling Before Sterilization");
