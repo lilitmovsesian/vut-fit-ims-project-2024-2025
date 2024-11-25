@@ -15,29 +15,29 @@ Facility tomatoDefectSorter("tomatoDefectSorter");
 // Capacity: 1 tomato at a time. Processing time: 0.5 seconds.
 Facility qualityControlWorker("qualityControlWorker");
 
-// Facility representing a machine that fills jars with tomatoes.
-// Capacity: 1 jar at a time. Processing time: 1 second.
-Facility tomatoJarFiller("tomatoJarFiller");
+// Store representing 5 machines that fills jars with tomatoes.
+// Capacity: 1 jar at a time. Processing time: 0.5 second.
+Store tomatoJarFiller("tomatoJarFiller", 5);
 
-// Facility representing a machine that fills jars with brine.
+// Store representing 2 machines that fills jars with brine.
 // Capacity: 1 jar at a time. Processing time: 3 seconds.
-Facility brineJarFiller("brineJarFiller");
+Store brineJarFiller("brineJarFiller", 2);
 
-// Facility representing a machine that closes the jars with lids.
+// Store representing 2 machines that closes the jars with lids.
 // Capacity: 1 jar at a time. Processing time: 3 seconds.
-Facility lidCloser("lidCloser");
+Store lidCloser("lidCloser", 2);
 
-// Facility representing a sterilization machine used to sterilize jars.
+// Store representing 12 sterilization machines used to sterilize jars.
 // Capacity: 50 jars per batch. Processing time: 2400 seconds.
-Store sterilizationMachine("sterilizationMachine", 9);
+Store sterilizationMachine("sterilizationMachine", 12);
 
-// Facility representing a machine that applies labels to the jars.
-// Capacity: 1 jar at a time. Processing time: 3 seconds.
-Facility labelApplicator("labelApplicator");
+// Store representing 10 machines that applies labels to the jars.
+// Capacity: 1 jar at a time. Processing time: 2 seconds.
+Store labelApplicator("labelApplicator", 10);
 
-// Facility representing a machine that prints production and expiration dates on jars.
-// Capacity: 1 jar at a time. Processing time: 3 seconds.
-Facility datePrinter("datePrinter");
+// Store representing 10 machines that prints production and expiration dates on jars.
+// Capacity: 1 jar at a time. Processing time: 2 seconds.
+Store datePrinter("datePrinter", 10);
 
 // Queue to manage jars waiting to be processed in the sterilization machine.
 Queue sterilizationQueue;
@@ -45,14 +45,14 @@ Queue sterilizationQueue;
 const double SIZE_SORTER_TIME = 0.5;
 const double DEFECT_SORTER_TIME = 0.5;
 const double QUALITY_CONTROL_TIME = 0.5;
-const double JAR_FILLER_TIME = 1.0; // For 1 tomato
+const double JAR_FILLER_TIME = 0.5; // For 1 tomato
 const double BRINE_FILLER_TIME = 3.0;
 const double LID_CLOSER_TIME = 3.0;
 const double STERILIZATION_TIME = 2400.0; // 40 minutes
-const double LABEL_APPLICATOR_TIME = 3.0;
-const double DATE_PRINTER_TIME = 3.0;
+const double LABEL_APPLICATOR_TIME = 2.0;
+const double DATE_PRINTER_TIME = 2.0;
 const int TOMATOES_PER_JAR = 5; // Number of tomatoes per jar
-const int STERILIZATION_CAPACITY = 50; // Number of jars per sterilization batch
+const int STERILIZATION_CAPACITY = 100; // Number of jars per sterilization batch
 
 Stat tomatoProcessingTime("Time to Process One Tomato Before Filling");
 Stat jarProcessingTime("Time to Process One Jar After Filling Before Sterilization");
@@ -76,45 +76,40 @@ class SterilizedJar : public Process {
         double startTime = Time; 
 
         // Apply labels
-        Seize(labelApplicator);
+        Enter(labelApplicator, 1);
         Wait(LABEL_APPLICATOR_TIME);
-        Release(labelApplicator);
+        Leave(labelApplicator, 1);
         totalJarsLabelApplied++;
 
         // Print dates
-        Seize(datePrinter);
+        Enter(datePrinter, 1);
         Wait(DATE_PRINTER_TIME);
-        Release(datePrinter);
+        Leave(datePrinter, 1);
         totalJarsDatePrinted++;
 
         sterilizedJarProcessingTime(Time - startTime);
     }
 };
 
-class SterilizedJarGenerator : public Event {
-    void Behavior() override {
-        (new SterilizedJar)->Activate();
-    }
-};
 
 class Jar : public Process {
     void Behavior() override {
         double startTime = Time; 
         
         // Fill brine
-        Seize(brineJarFiller);
+        Enter(brineJarFiller, 1);
         Wait(BRINE_FILLER_TIME);
-        Release(brineJarFiller);
+        Leave(brineJarFiller, 1);
 
         // Close lid
-        Seize(lidCloser);
+        Enter(lidCloser, 1);
         Wait(LID_CLOSER_TIME);
-        Release(lidCloser);
+        Leave(lidCloser, 1);
 
         Into(sterilizationQueue);
         
         if (sterilizationQueue.Length() >= STERILIZATION_CAPACITY ) { 
-            // Free 50 jars from queue
+            // Free 100 jars from queue
             for (int i = 0; i < STERILIZATION_CAPACITY; i++) {
                 sterilizationQueue.GetFirst()->Activate();
             }
@@ -123,22 +118,15 @@ class Jar : public Process {
             Leave(sterilizationMachine, 1);
             for (int i = 0; i < STERILIZATION_CAPACITY; i++) {
                 totalJarsSterilized++;
-                (new SterilizedJarGenerator)->Activate();
+                (new SterilizedJar)->Activate();
             }
 
         } else {
-            // Passivate the jar process until the sterilization queue has 50 jars
+            // Passivate the jar process until the sterilization queue has 100 jars
             Passivate();
         }
 
         jarProcessingTime(Time - startTime);       
-    }
-};
-
-
-class JarGenerator : public Event {
-    void Behavior() override {
-        (new Jar)->Activate();
     }
 };
 
@@ -179,9 +167,9 @@ class Tomato : public Process {
         }
 
         // Fill tomato
-        Seize(tomatoJarFiller);
+        Enter(tomatoJarFiller, 1);
         Wait(JAR_FILLER_TIME);
-        Release(tomatoJarFiller);
+        Leave(tomatoJarFiller, 1);
 
         tomatoProcessingTime(Time - startTime);
 
@@ -189,7 +177,7 @@ class Tomato : public Process {
         if (tomatoesInCurrentJar == TOMATOES_PER_JAR) {
             tomatoesInCurrentJar = 0;
             totalJarsFilled++;
-            (new JarGenerator)->Activate();
+            (new Jar)->Activate();
         }
 
     }
@@ -200,7 +188,7 @@ class TomatoGenerator : public Event {
     void Behavior() override {
         totalTomatoesGenerated++;
         (new Tomato)->Activate();
-        Activate(Time + 1);
+        Activate(Time + 0.5);
     }
 };
 

@@ -11,5 +11,8 @@ build_simlib:
 tomato_preserver: main.cpp
 	$(CXX) $(CXXFLAGS) -o tomato_preserver main.cpp $(LDFLAGS)
 
+run: all
+	./tomato_preserver
+	
 clean:
 	rm -f tomato_preserver output.txt
