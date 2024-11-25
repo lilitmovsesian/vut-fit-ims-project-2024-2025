@@ -15,9 +15,9 @@ Facility tomatoDefectSorter("tomatoDefectSorter");
 // Capacity: 1 tomato at a time. Processing time: 0.5 seconds.
 Facility qualityControlWorker("qualityControlWorker");
 
-// Store representing 5 machines that fills jars with tomatoes.
-// Capacity: 1 jar at a time. Processing time: 0.5 second.
-Store tomatoJarFiller("tomatoJarFiller", 5);
+// Store representing 2 machines that fills jars with tomatoes.
+// Capacity: 1 jar at a time. Processing time: 1 second.
+Store tomatoJarFiller("tomatoJarFiller", 2);
 
 // Store representing 2 machines that fills jars with brine.
 // Capacity: 1 jar at a time. Processing time: 3 seconds.
@@ -27,9 +27,9 @@ Store brineJarFiller("brineJarFiller", 2);
 // Capacity: 1 jar at a time. Processing time: 3 seconds.
 Store lidCloser("lidCloser", 2);
 
-// Store representing 12 sterilization machines used to sterilize jars.
-// Capacity: 50 jars per batch. Processing time: 2400 seconds.
-Store sterilizationMachine("sterilizationMachine", 12);
+// Store representing 9 sterilization machines used to sterilize jars.
+// Capacity: 100 jars per batch. Processing time: 2400 seconds.
+Store sterilizationMachine("sterilizationMachine", 9);
 
 // Store representing 10 machines that applies labels to the jars.
 // Capacity: 1 jar at a time. Processing time: 2 seconds.
@@ -45,7 +45,7 @@ Queue sterilizationQueue;
 const double SIZE_SORTER_TIME = 0.5;
 const double DEFECT_SORTER_TIME = 0.5;
 const double QUALITY_CONTROL_TIME = 0.5;
-const double JAR_FILLER_TIME = 0.5; // For 1 tomato
+const double JAR_FILLER_TIME = 1.0; // For 1 tomato
 const double BRINE_FILLER_TIME = 3.0;
 const double LID_CLOSER_TIME = 3.0;
 const double STERILIZATION_TIME = 2400.0; // 40 minutes
